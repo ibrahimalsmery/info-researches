@@ -1,63 +1,34 @@
-# Build stage
-FROM node:lts-alpine AS builder
-
+# Base stage for shared configurations
+FROM node:22-alpine AS base
 WORKDIR /app
+ENV NODE_ENV=production
 
-# Copy package files
+# Dependencies stage - install all dependencies
+FROM base AS deps
 COPY package*.json ./
-
-
-# Install dependencies
 RUN npm install
-
-# Copy source code
-COPY . .
-
-# Build the application
-RUN npm run build
 
 # Development stage
-FROM node:lts-alpine AS development
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-
-# Install dependencies including dev dependencies
-RUN npm install
-
-# Copy source code
+FROM base AS development
+ENV NODE_ENV=development
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-# Expose development port
 EXPOSE 3000
-
-# Start development server
 CMD ["npm", "run", "dev"]
 
-# Production stage
-FROM node:lts-alpine AS production
+# Builder stage - build the application
+FROM base AS builder
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build
 
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install only production dependencies
-RUN npm install --production
-
-# Copy built files from builder stage
+# Production stage - minimal image with only necessary files
+FROM base AS production
+# Copy only necessary files from builder
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.ts ./
 COPY --from=builder /app/package.json ./
-
-# Expose production port
+COPY --from=builder /app/next.config.ts ./
+COPY --from=deps /app/node_modules ./node_modules
 EXPOSE 3000
-
-
-
-# Start production server
 CMD ["npm", "start"]

@@ -1,8 +1,8 @@
 version: '3.8'
 
 services:
-  # Development service
-  app-dev:
+  # Development environment
+  dev:
     build:
       context: .
       target: development
@@ -14,10 +14,11 @@ services:
       - /app/.next
     environment:
       - NODE_ENV=development
-    command: bun run dev
+    command: npm run dev
+    restart: unless-stopped
 
-  # Production service
-  app-prod:
+  # Production environment
+  prod:
     build:
       context: .
       target: production
@@ -25,4 +26,5 @@ services:
       - "3001:3000"
     environment:
       - NODE_ENV=production
-    command: bun start
+    command: npm start
+    restart: unless-stopped
