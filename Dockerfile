@@ -1,32 +1,32 @@
 # Build stage
-FROM oven/bun:1 AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-COPY bun* ./
+
 
 # Install dependencies
-RUN bun install
+RUN npm install
 
 # Copy source code
 COPY . .
 
 # Build the application
-RUN bun run build
+RUN npm run build
 
 # Development stage
-FROM oven/bun:1 AS development
+FROM node:20-alpine AS development
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-COPY bun* ./
+
 
 # Install dependencies including dev dependencies
-RUN bun install
+RUN npm install
 
 # Copy source code
 COPY . .
@@ -35,19 +35,18 @@ COPY . .
 EXPOSE 3000
 
 # Start development server
-CMD ["bun", "run", "dev"]
+CMD ["npm", "run", "dev"]
 
 # Production stage
-FROM oven/bun:1 AS production
+FROM node:20-alpine AS production
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-COPY bun* ./
 
 # Install only production dependencies
-RUN bun install --production
+RUN npm install --production
 
 # Copy built files from builder stage
 COPY --from=builder /app/.next ./.next
@@ -58,5 +57,7 @@ COPY --from=builder /app/package.json ./
 # Expose production port
 EXPOSE 3000
 
+
+
 # Start production server
-CMD ["bun", "start"]
+CMD ["npm", "start"]
